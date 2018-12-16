@@ -53,8 +53,8 @@ def line(n, dx):
     t = np.linspace(0, 10, 101)
     pos = np.empty([n, 2])
     for i in range(n):
-        x_new = x0 + t[i] * v * cos(theta)
-        y_new = y0 + t[i] * v * sin(theta)
+        x_new = np.random.normal(x0 + t[i] * v * cos(theta), dx)
+        y_new = np.random.normal(y0 + t[i] * v * sin(theta), dx)
         pos[i,:] = [x_new, y_new]
     
     return(t, pos)
@@ -64,29 +64,33 @@ def line(n, dx):
 def main():
 
     # Initialize
-    dx = 0.1    # m uncertainty in position measurement
+    dx = 0.2    # m uncertainty in position measurement
     k = kalman(0, dx)
 
     n = 51
     t, truth = line(n, dx)
     meas = np.empty([n, 2])
     filt_pos = np.empty([n, 4])
-    
+    filt_spd = np.empty(n)
+    spd_var = np.empty(n)
 
     for i in range(n):
         z = np.array(truth[i,:], ndmin=2)
         z = z.transpose()
         x, P = k.step(t[i], z)
         filt_pos[i,:] = np.transpose(x)
-        filt_spd[i] = sqrt(x[2]^2 + x[3]^2)
+        filt_spd[i] = np.linalg.norm([x[2][0], x[3][0]])
+        spd_var[i] = np.linalg.norm([P[2][2], P[3][3]])
 
 
     plt.subplot(2,1,1)
-    plt.plot(truth,'+')
-    plt.plot(filt[:,0:2],'--')
+    plt.plot(truth[:,0],truth[:,1],'+')
+    plt.plot(filt_pos[:,0],filt_pos[:,1],'--')
+    plt.axis('equal')
 
     plt.subplot(2,1,2)
-    plt.plot()
+    plt.plot(filt_spd)
+    plt.plot(spd_var)
     plt.show()
 
 main()
