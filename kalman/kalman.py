@@ -70,18 +70,20 @@ def main():
     n = 51
     t, truth = line(n, dx)
     meas = np.empty([n, 2])
-    filt = np.empty([n, 4])
+    filt_pos = np.empty([n, 4])
+    
 
     for i in range(n):
         z = np.array(truth[i,:], ndmin=2)
         z = z.transpose()
         x, P = k.step(t[i], z)
-        filt[i,:] = np.transpose(x)
+        filt_pos[i,:] = np.transpose(x)
+        filt_spd[i] = sqrt(x[2]^2 + x[3]^2)
 
 
     plt.subplot(2,1,1)
     plt.plot(truth,'+')
-    plt.plot(filt,'--')
+    plt.plot(filt[:,0:2],'--')
 
     plt.subplot(2,1,2)
     plt.plot()
