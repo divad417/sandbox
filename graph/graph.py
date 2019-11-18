@@ -15,53 +15,64 @@ class Node():
         self.edges = []
         self.parent = None
 
-    def connect(self, edges: List[Node]):
-        for edge in edges:
-            self._check_node(edge)
-            if edge in self.edges:
-                continue
-            self.edges.append(edge)
+    def _check_node(self, node: 'Node'):
+        if not node.id < self.max_id:
+            raise ValueError('Invalid node')
 
-    def set_parent(self, node: Node):
+    def connect(self, edge: 'Node'):
+        self._check_node(edge)
+        if edge in self.edges:
+            continue
+        self.edges.append(edge)
+
+    def set_parent(self, node: 'Node'):
         self._check_node(node)
         if self not in node.edges:
             raise ValueError('Parent not connected')
         self.parent = node
 
-    def _check_node(self, node: Node):
-        if not node.id < self.max_id:
-            raise ValueError('Invalid node')
-
+    def set_position(self, index):
+        self.row = index[0]
+        self.col = index[1]
 
 class Graph:
 
     def __init__(self):
         self.nodes = []
 
-    def from_array(self, array):
-        pixel = np.nditer(array, flags=['multi_index'])
-        while not pixel.finished:
-            if pixel[0] == Image.BLOCKED:
-                pixel.iternext()
+    def from_image(self, array):
+        # Create nodes
+        iterator = np.nditer(array, flags=['multi_index'])
+        while not iterator.finished:
+            if iterator.value == Image.BLOCKED:
+                iterator.iternext()
                 continue
-            node = Node()
-            node.row, node.col = pixel.multi_index
+            self.nodes.append(Node())
+            self.nodes[-1].set_position(iterator.multi_index)
+            iterator.iternext()
 
-            # Find edges above
-            if node.row > 0:
-                pass
-            # Find edges below
-            if node.row < array.shape[0]:
-                pass
-            # Find edges left
-            if node.col > 0:
-                pass
-            # Find edges right
-            if node.col < array.shape[1]:
-                pass
+        connections = ([1, 0],
+                       [0, 1],
+                       [-1, 0],
+                       [0, -1])
 
-            self.nodes.append(node)
-            pixel.iternext()
+        def _get_id_by_location(row, col):
+            return id
+
+        def _connect_if_valid(node, row, col):
+            if not (0 <= row < array.shape[0] and
+                    0 <= col < array.shape[1]):
+                return
+            if array(row, col) == Image.BLOCKED:
+                return
+            node.connect(self._get_id_by_location(row, col))
+
+        # Connect nodes
+        for node in self.nodes():
+            for drow, dcol in connections:
+                self._connect_if_valid(node, node.row + drow, node.col + dcol)
+            
+
 
         
         # Go through each pixel
@@ -79,13 +90,13 @@ class Image:
 
     def __init__(self, array_like):
         # Check that all pixels are valid
-        self.grid = array_like
+        self.map = array_like
 
     @property
-    def graph(self):
+    def make_graph(self):
         self._graph = Graph()
-        self._graph.from_array(self.grid)
-        return self._graph
+        self._graph.from_image(self.map)
+        self._graph.reduce()
 
     def show(self):
         colors = {self.FREE : (255, 255, 255),
@@ -93,8 +104,8 @@ class Image:
                   self.PATH : (255, 0, 0)}
 
         # Create an image by replacing scalar values with RGB values.
-        image_flat = [colors[pixel] for pixel in self.grid.flat]
-        image = np.reshape(image_flat, self.grid.shape + (3,))
+        image_flat = [colors[pixel] for pixel in self.map.flat]
+        image = np.reshape(image_flat, self.map.shape + (3,))
 
         # Display the image.
         fig, ax = plt.subplots()
@@ -105,9 +116,9 @@ class Image:
 
 
 if __name__ == '__main__':
-    a = Image(np.identity(5))
-    a.grid[0, 0] = Image.PATH
-    a.graph
+    a = Image(np.identity(6) * Image.BLOCKED)
+    a.map[0, 0] = Image.PATH
+    a.make_graph
     a.show()
 
 
