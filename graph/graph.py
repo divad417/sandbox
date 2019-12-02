@@ -1,132 +1,67 @@
-#!/usr/local/bin/python3
-
-from typing import List
-
-import numpy as np
-import matplotlib.pyplot as plt
+import abc
+from typing import Type, List, TypeVar
 
 
-class Node():
+class Node(abc.ABC):
     max_id = 0
 
     def __init__(self):
         self.id = self.max_id
-        self.max_id +=1
+        Node.max_id += 1
         self.edges = []
         self.parent = None
 
+    def __repr__(self) -> str:
+        return 'Node {}'.format(self.id)
+
     def _check_node(self, node: 'Node'):
-        if not node.id < self.max_id:
+        if not node.id < Node.max_id:
             raise ValueError('Invalid node')
 
     def connect(self, edge: 'Node'):
         self._check_node(edge)
-        if edge in self.edges:
-            continue
-        self.edges.append(edge)
+        if edge not in self.edges:
+            self.edges.append(edge)
 
     def set_parent(self, node: 'Node'):
         self._check_node(node)
         if self not in node.edges:
-            raise ValueError('Parent not connected')
+            raise ValueError('Current node not an edge of requested parent')
         self.parent = node
 
-    def set_position(self, index):
-        self.row = index[0]
-        self.col = index[1]
+    def generate_path(self, path=[]) -> List['Node']:
+        path.append(self)
+        if self.parent:
+            self.parent.generate_path(path)
+        path.reverse()
+        return path
 
-class Graph:
-
-    def __init__(self):
-        self.nodes = []
-
-    def from_image(self, array):
-        # Create nodes
-        iterator = np.nditer(array, flags=['multi_index'])
-        while not iterator.finished:
-            if iterator.value == Image.BLOCKED:
-                iterator.iternext()
-                continue
-            self.nodes.append(Node())
-            self.nodes[-1].set_position(iterator.multi_index)
-            iterator.iternext()
-
-        connections = ([1, 0],
-                       [0, 1],
-                       [-1, 0],
-                       [0, -1])
-
-        def _get_id_by_location(row, col):
-            return id
-
-        def _connect_if_valid(node, row, col):
-            if not (0 <= row < array.shape[0] and
-                    0 <= col < array.shape[1]):
-                return
-            if array(row, col) == Image.BLOCKED:
-                return
-            node.connect(self._get_id_by_location(row, col))
-
-        # Connect nodes
-        for node in self.nodes():
-            for drow, dcol in connections:
-                self._connect_if_valid(node, node.row + drow, node.col + dcol)
-            
+    @abc.abstractmethod
+    def cost(self, node: Type('Node')) -> int:
+        if node not in self.edges:
+            return None
 
 
-        
-        # Go through each pixel
-            # Create a node if it's not filled
-            # Conenct the node to nearby elements
-    
-    def reduce(self):
+class SearchAlgorithm(abc.ABC):
+    @abc.abstractmethod
+    def solve(self):
         pass
-        # Remove unnessary nodes
-
-class Image:
-    FREE = 0
-    BLOCKED = 1
-    PATH = 2
-
-    def __init__(self, array_like):
-        # Check that all pixels are valid
-        self.map = array_like
-
-    @property
-    def make_graph(self):
-        self._graph = Graph()
-        self._graph.from_image(self.map)
-        self._graph.reduce()
-
-    def show(self):
-        colors = {self.FREE : (255, 255, 255),
-                  self.BLOCKED : (0, 0, 0),
-                  self.PATH : (255, 0, 0)}
-
-        # Create an image by replacing scalar values with RGB values.
-        image_flat = [colors[pixel] for pixel in self.map.flat]
-        image = np.reshape(image_flat, self.map.shape + (3,))
-
-        # Display the image.
-        fig, ax = plt.subplots()
-        fig.set_facecolor('gray')
-        ax.imshow(image)
-        ax.set_axis_off()
-        plt.show()
 
 
-if __name__ == '__main__':
-    a = Image(np.identity(6) * Image.BLOCKED)
-    a.map[0, 0] = Image.PATH
-    a.make_graph
-    a.show()
+class Graph(abc.ABC):
+    def __init__(self):
+        self.nodes = set()
+        self.start = None
+        self.goal = None
+            
+    def simplify(self):
+        for node in self.nodes:
+            if node in (self.start, self.goal):
+                continue
+            if len(node.edges) < 3:
+                pass
 
-
-
-# Create an image
-# Create a graph from the image
-# Find a way through that graph
-
-# G - cost of path to start
-# H - cost of path to goal
-# F - sum of cost
+    @abc.abstractmethod
+    def solve(self, search_algorithm: SearchAlgorithm):
+        # Solve in place by determining each parent
+        pass

@@ -3,41 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-class vec:
-    '''2D X-Y location.'''
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-
-    def __repr__(self):
-        return '{}, {}'.format(self.x, self.y)
-
-    def __hash__(self):
-        return hash((self.x, self.y))
-    
-    def __eq__(self, obj):
-        return self.x == obj.x and self.y == obj.y
-
-    def __add__(self, new):
-        return (vec(self.x + new.x, self.y + new.y))
-
-    def __getitem__(self, key):
-        # For conversion to numpy array
-        if key == 0:
-            return self.x
-        if key == 1:
-            return self.y
-        if key > 1:
-            raise IndexError
-
-    def __len__(self):
-        # For conversion to numpy array
-        return 2
-
-    @property
-    def max(self):
-        return max([abs(self.x), abs(self.y)])
-
+from graph.vectors import vec
 
 class Ulam:
     '''Ulam spiral.'''
@@ -55,7 +21,7 @@ class Ulam:
     def __repr__(self):
         return 'Ulam spiral: size {}, max {}'.format(self.size, self.max)
 
-    def __str__(self):
+    def __str__(self) -> str:
         coords = range(-self.size + 1, self.size)
         format = '{{:{}}}'.format(len(str(self.max)) + 1)
         return '\n'.join([
@@ -97,7 +63,7 @@ class Rook:
                    vec(1, -2),
                    vec(2, -1))
 
-    def jump(self):
+    def jump(self) -> bool:
         destination = False
         value = float('inf')
         for move in self.legal_moves:
@@ -121,11 +87,13 @@ class Rook:
 
     def plot(self):
         locations = np.array(self.locations)
+
+        plt.figure()
         plt.plot(locations[:,0], locations[:,1], '0.45', linewidth=0.8)
         plt.axis('equal')
         plt.axis('off')
         plt.tight_layout()
-        plt.show()
+        plt.savefig('jumping_rook.png', dpi=300, transparent=True)
 
 
 if __name__ == '__main__':
