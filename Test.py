@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
 
-class Test:
-    def __init__(self):
-        self._data = [[1, 2], [3, 4]]
+import argcomplete
+import argparse
 
-    def __getitem__(self, index):
-        print('Index is {}'.format(index))
-        print('Index type is {}'.format(type(index)))
+def completer(**kwargs):
+    return ['a', 'b', 'c']
+
+parser = argparse.ArgumentParser()
+parser.add_argument('test').completer = completer
+
+argcomplete.autocomplete(parser)
+args = parser.parse_args()
+
+print(args.test)

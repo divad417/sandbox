@@ -12,7 +12,7 @@ class Node(abc.ABC):
         self.parent = None
 
     def __repr__(self) -> str:
-        return 'Node {}'.format(self.id)
+        return f'Node {self.id}'
 
     def _check_node(self, node: 'Node'):
         if not node.id < Node.max_id:

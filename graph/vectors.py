@@ -40,9 +40,9 @@ class vec:
 
     def __repr__(self) -> str:
         if self._len == 2:
-            return '{}, {}'.format(self.x, self.y)
+            return f'vec({self.x}, {self.y})'
         elif self._len == 3:
-            return '{}, {}, {}'.format(self.x, self.y, self.z)
+            return f'vec({self.x}, {self.y}, {self.z})'
 
     def __hash__(self) -> int:
         return hash((self.x, self.y, self.z))
