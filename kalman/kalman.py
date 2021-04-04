@@ -35,26 +35,27 @@ class kalman():
         K = np.dot(np.dot(self.P, self.H.transpose()), np.linalg.inv(S))
         self.x = self.x + np.dot(K, y)
         self.P = np.dot((np.identity(4) - np.dot(K, self.H)), self.P)
-        x = self.x
-        P = self.P
 
         # Predict
         self.x = np.dot(self.F, self.x)
         self.P = np.dot(self.F, np.dot(self.P, self.F.transpose()))
+        
+        x = self.x
+        P = self.P
         return(x, P)
 
 def line(n, dx):
     x0 = 0
     y0 = 0
     theta = pi/4
-    v = 10
+    v = [10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9.5, 9, 8.5, 8, 7, 6, 5, 4, 2, 1, 0.5]
     dt = 0.1
 
     t = np.linspace(0, 10, 101)
     pos = np.empty([n, 2])
     for i in range(n):
-        x_new = np.random.normal(x0 + t[i] * v * cos(theta), dx)
-        y_new = np.random.normal(y0 + t[i] * v * sin(theta), dx)
+        x_new = np.random.normal(x0 + t[i] * v[i] * cos(theta), dx)
+        y_new = np.random.normal(y0 + t[i] * v[i] * sin(theta), dx)
         pos[i,:] = [x_new, y_new]
     
     return(t, pos)
@@ -67,7 +68,7 @@ def main():
     dx = 0.2    # measurement uncertainty
     k = kalman(0, dx)
 
-    n = 51
+    n = 21
     t, truth = line(n, dx)
     filt_pos = np.empty([n, 4])
     filt_spd = np.empty(n)
@@ -93,6 +94,7 @@ def main():
     plt.axis('equal')
 
     plt.subplot(2,1,2)
+    plt.plot([10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 9.5, 9, 8.5, 8, 7, 6, 5, 4, 2, 1, 0.5])
     plt.plot(filt_spd)
     plt.plot(spd_var)
     plt.axis([0, 50, 0, 15])
