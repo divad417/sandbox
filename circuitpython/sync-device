@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+
+import argparse
+import circup
+import os
+import subprocess
+from pathlib import Path
+
+BASE_PATH = Path.home() / 'circuitpython' / 'projects'
+
+
+def create_project_file(device_path, project):
+    file = device_path / 'project.txt'
+    with file.open('w+') as f:
+        f.write(project)
+
+
+def up(args):
+    device_path = Path(circup.find_device())
+
+    # TODO Check for project.txt file
+    try:
+        with open(device_path / 'project.txt') as f:
+            project = f.read()
+    except FileNotFoundError:
+        project = input('No project.txt file exists on the device, enter project name:\n')
+        if not project:
+            return
+        create_project_file(device_path, project)
+    # TODO Check project exists on localhost
+
+    target_path = BASE_PATH / project
+    excludes = [
+        'project.txt',
+        'lib',
+        'boot_out.txt',
+        '.Trashes',
+        '.fseventsd',
+        '.metadata_never_index'
+    ]
+    rsync_call = ['rsync', '-a']
+    for item in excludes:
+        rsync_call.extend(['--exclude', item])
+    rsync_call.extend([str(device_path) + os.sep, str(target_path)])
+    subprocess.call(rsync_call)
+
+    requirements_file = BASE_PATH / project / 'requirements.txt'
+    subprocess.call(['circup', 'freeze', '-r'])
+    subprocess.call(['mv', 'requirements.txt', BASE_PATH / project])
+
+    
+
+def down(args):
+    # TODO check that project exists
+    # TODO check for uncommitted git files
+    device_path = Path(circup.find_device())
+    create_project_file(device_path, args.project)
+    
+    source_path = BASE_PATH / args.project
+    excludes = [
+        '.git',
+        '.gitignore',
+        '__pycache__',
+        'README.md',
+        'requirements.txt',
+        'parts'
+    ]
+    rsync_call = ['rsync', '-a']
+    for item in excludes:
+        rsync_call.extend(['--exclude', item])
+    rsync_call.extend([str(source_path) + os.sep, str(device_path)])
+
+    subprocess.call(rsync_call)
+
+    requirements_file = BASE_PATH / args.project / 'requirements.txt'
+    subprocess.call(['circup', 'install', '-r', requirements_file])
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="""
+Sync files between a circuitpython board and the localhost. Additionally will
+manage package dependencies and updates through circup, adding any new
+libraries to the localhost requirements.txt file or updating the libraries on
+the device.
+
+This tool assumes projects are located at ~/circuitpython/projects
+    """, formatter_class=argparse.RawDescriptionHelpFormatter)
+    subparsers = parser.add_subparsers()
+    up_parser = subparsers.add_parser('up', help='Sync files from device to localhost')
+    up_parser.set_defaults(func=up)
+    down_parser = subparsers.add_parser('down', help='Sync files from localhost to device')
+    down_parser.set_defaults(func=down)
+    down_parser.add_argument('project', type=str, help='Project name to sync onto the device')
+
+    args = parser.parse_args()
+    args.func(args)
